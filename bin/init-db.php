@@ -15,7 +15,7 @@ require $root . '/src/Env.php';
 require $root . '/src/Database.php';
 
 Salon\Env::load($root . '/.env');
-$dsn = Salon\Env::get('DB_DSN', 'sqlite:' . $root . '/var/salon.sqlite');
+$dsn = Salon\Database::resolveSqlitePath(Salon\Env::get('DB_DSN', 'sqlite:var/salon.sqlite'), $root);
 
 if (str_starts_with($dsn, 'sqlite:')) {
     $path = substr($dsn, 7);

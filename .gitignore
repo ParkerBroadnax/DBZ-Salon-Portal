@@ -1,0 +1,5 @@
+/vendor/
+/var/
+/exports/
+.env
+.phpunit.result.cache

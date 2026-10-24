@@ -20,7 +20,20 @@ final class Database
         $user = Env::get('DB_USER', 'salon');
         $pass = Env::get('DB_PASSWORD', '');
 
-        return self::connect($dsn, $user, $pass);
+        return self::connect(self::resolveSqlitePath($dsn, dirname(__DIR__)), $user, $pass);
+    }
+
+    /** Make a relative SQLite path relative to the project root, not the web server's working directory. */
+    public static function resolveSqlitePath(string $dsn, string $root): string
+    {
+        if (!str_starts_with($dsn, 'sqlite:')) {
+            return $dsn;
+        }
+        $path = substr($dsn, 7);
+        if ($path === ':memory:' || str_starts_with($path, '/')) {
+            return $dsn;
+        }
+        return 'sqlite:' . $root . '/' . $path;
     }
 
     public static function connect(string $dsn, ?string $user = null, ?string $pass = null): PDO
