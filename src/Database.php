@@ -15,7 +15,8 @@ final class Database
 {
     public static function fromEnv(): PDO
     {
-        $dsn = Env::get('DB_DSN', 'mysql:host=127.0.0.1;port=3306;dbname=salon;charset=utf8mb4');
+        // Default: a local SQLite file, so the app runs with no database server.
+        $dsn = Env::get('DB_DSN', 'sqlite:' . dirname(__DIR__) . '/var/salon.sqlite');
         $user = Env::get('DB_USER', 'salon');
         $pass = Env::get('DB_PASSWORD', '');
 
