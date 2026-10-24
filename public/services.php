@@ -1,31 +1,7 @@
-<?php 
-include('includes/dbconnection.php');
-session_start();
-error_reporting(0);
-if(isset($_POST['submit']))
-{
-
-	$name=$_POST['name'];
-	$email=$_POST['email'];
-	$services=$_POST['services'];
-	$adate=$_POST['adate'];
-	$atime=$_POST['atime'];
-	$phone=$_POST['phone'];
-	$aptnumber = mt_rand(100000000, 999999999);
-
-	$query=mysqli_query($con,"insert into tblappointment(AptNumber,Name,Email,PhoneNumber,AptDate,AptTime,Services) value('$aptnumber','$name','$email','$phone','$adate','$atime','$services')");
-	if ($query) 
-	{
-		echo "<script>alert('Thank you for booking, your appointment number is $aptnumber, we will give you phone call shortly.');</script>";  		
-		echo "<script>window.location.href='index.php'</script>";	
-	}
-	else
-	{
-		echo "<script>alert('Something Went Wrong. Please try again.');</script>";  	 	
-	}
-
-}
-
+<?php
+require __DIR__ . '/../src/bootstrap.php';
+handle_booking($db, $serviceRepo);
+[$flash, $old] = take_flash();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,29 +48,31 @@ if(isset($_POST['submit']))
 		<div class="container">
 			<div class="row no-gutters">
 				<div class="col-sm-12 p-4 p-md-5 d-flex align-items-center justify-content-center bg-primary">
-					<form action="#" method="post" class="appointment-form">
+					<form action="" method="post" class="appointment-form" id="book">
+						<?php include __DIR__ . '/../templates/flash.php' ?>
+						<?= \Salon\Csrf::field() ?>
 						<h3 class="mb-3">Book your Service</h3>
 						<div class="row">
 							<div class="col-md-4">
 								<div class="form-group">
-									<input type="name" name="name" class="form-control" placeholder="Name"required>
+									<input type="text" name="name" class="form-control" placeholder="Name" value="<?= e($old['name'] ?? '') ?>" required>
 								</div>
 							</div>
 							<div class="col-md-4">
 								<div class="form-group">
-									<input type="email" name="email" class="form-control" placeholder="Email"required>
+									<input type="email" name="email" class="form-control" placeholder="Email" value="<?= e($old['email'] ?? '') ?>" required>
 								</div>
 							</div>
 							<div class="col-md-4">
 								<div class="form-group">
-									<input type="text" name="phone" class="form-control" placeholder="Phone"required>
+									<input type="tel" name="phone" class="form-control" placeholder="Phone" value="<?= e($old['phone'] ?? '') ?>" required>
 								</div>
 							</div>
 							<div class="col-md-4">
 								<div class="form-group">
 									<div class="input-wrap">
 										<div class="icon"><span class="fa fa-calendar"></span></div>
-										<input type="text" name="adate" class="form-control book_date" placeholder="Date"required>
+										<input type="text" name="adate" class="form-control book_date" placeholder="Date" autocomplete="off" value="<?= e($old['adate'] ?? '') ?>" required>
 									</div>
 								</div>
 							</div>
@@ -102,7 +80,7 @@ if(isset($_POST['submit']))
 								<div class="form-group">
 									<div class="input-wrap">
 										<div class="icon"><span class="fa fa-clock-o"></span></div>
-										<input type="text" name="atime" class="form-control book_time" placeholder="Time"required>
+										<input type="text" name="atime" class="form-control book_time" placeholder="Time" autocomplete="off" value="<?= e($old['atime'] ?? '') ?>" required>
 									</div>
 								</div>
 							</div>
@@ -111,15 +89,8 @@ if(isset($_POST['submit']))
 									<div class="form-field">
 										<div class="select-wrap">
 											<div class="icon"><span class="fa fa-chevron-down"></span></div>
-											<select name="services" id="services" class="form-control"required>
-												<option value="">Select Service</option>
-												<?php $query=mysqli_query($con,"select * from tblservices");
-												while($row=mysqli_fetch_array($query))
-												{
-													?>
-													<option style="color: red;" value="<?php echo $row['ServiceName'];?>" ><?php echo $row['ServiceName'];?></option>
-													<?php
-												} ?> 
+											<select name="service_id" id="services" class="form-control" required>
+<?php include __DIR__ . '/../templates/service_options.php' ?>
 											</select>
 										</div>
 									</div>
@@ -127,7 +98,7 @@ if(isset($_POST['submit']))
 							</div>
 							<div class="col-md-2">
 								<div class="form-group">
-									<input type="submit" name="submit" value="Book Now" class="btn btn-white ">
+									<input type="submit" name="book" value="Book Now" class="btn btn-white ">
 								</div>
 							</div>
 						</div>
@@ -151,16 +122,9 @@ if(isset($_POST['submit']))
 							</tr>
 						</thead>
 						<tbody>
-							<?php
-							$ret=mysqli_query($con,"select *from  tblservices");
-							$cnt=1;
-							while ($row=mysqli_fetch_array($ret)) {
-
-								?>
-
-								<tr> <th scope="row"><?php echo $cnt;?></th> <td><?php  echo $row['ServiceName'];?></td> <td><?php  echo $row['Cost'];?></td> </tr>   <?php 
-								$cnt=$cnt+1;
-							}?>
+							<?php foreach ($services as $i => $service): ?>
+								<tr><th scope="row"><?= $i + 1 ?></th><td><?= e($service['name']) ?></td><td>$<?= e($service['cost']) ?></td></tr>
+							<?php endforeach; ?>
 						</tbody> 
 					</table> 
 				</div>
