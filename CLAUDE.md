@@ -34,7 +34,7 @@ Plain PHP pages, no framework or router. Each page in `public/` does `require __
 
 ### Conventions that span files
 
-- **Two databases, two schemas.** MySQL/MariaDB uses `db/schema.sql` (Docker loads it automatically); SQLite uses `db/schema.sqlite.sql` (local runs and tests). `db/seed.sql` is shared. Any schema change must be made in both files. SQL in `src/` must be portable across MySQL and SQLite.
+- **Two databases, two schemas.** MySQL/MariaDB uses `db/schema.sql` (MariaDB loads it on a fresh volume; the app container also runs `bin/init-db.php` on every start, so new `CREATE TABLE IF NOT EXISTS` tables reach existing volumes); SQLite uses `db/schema.sqlite.sql` (local runs and tests). `db/seed.sql` is shared. Any schema change must be made in both files. SQL in `src/` must be portable across MySQL and SQLite.
 - **Appointment statuses** (`pending`, `confirmed`, `completed`, `cancelled`) are defined in the CHECK constraint of both schemas and again in `ReportRepository::setStatus()`. Keep all three in sync.
 - **Config** is read only through `Env::get()`. Real environment variables override `.env`. Relative SQLite paths in `DB_DSN` are resolved against the project root (`Database::resolveSqlitePath`), not the web server's working directory.
 - **Security baseline** (the reason for the `modernize` rewrite, see README): every query uses PDO prepared statements (emulated prepares off), every value printed in HTML goes through `e()`, and every POST form includes `Csrf::field()` and is checked with `Csrf::valid()`.

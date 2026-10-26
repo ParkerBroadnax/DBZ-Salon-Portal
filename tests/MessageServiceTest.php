@@ -51,6 +51,14 @@ final class MessageServiceTest extends TestCase
         $this->assertSame([], $result['data']);
     }
 
+    public function testArrayInputIsRejectedNotStoredAsArray(): void
+    {
+        $result = $this->messages->validate($this->input(['name' => ['x'], 'subject' => ['y']]));
+
+        $this->assertArrayHasKey('name', $result['errors']);
+        $this->assertArrayHasKey('subject', $result['errors']);
+    }
+
     public function testSqlInjectionIsStoredAsPlainText(): void
     {
         $body = "'); DROP TABLE messages;--";
@@ -75,5 +83,16 @@ final class MessageServiceTest extends TestCase
         $this->assertFalse($this->messages->markRead(999));
         $this->assertSame(1, (int) $this->db->query("SELECT is_read FROM messages WHERE id = {$first}")->fetchColumn());
         $this->assertSame(0, (int) $this->db->query("SELECT is_read FROM messages WHERE id = {$second}")->fetchColumn());
+    }
+
+    public function testUnreadMessagesStayInTheListAheadOfNewerReadOnes(): void
+    {
+        $create = fn (string $subject) => $this->messages->create($this->messages->validate($this->input(['subject' => $subject]))['data']);
+        $create('Old unread');
+        $this->messages->markRead($create('Newer read'));
+        $create('Newest unread');
+
+        $this->assertSame(['Newest unread', 'Old unread', 'Newer read'], array_column($this->messages->recent(), 'subject'));
+        $this->assertSame(['Newest unread', 'Old unread'], array_column($this->messages->recent(2), 'subject'));
     }
 }

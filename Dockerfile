@@ -7,3 +7,7 @@ RUN docker-php-ext-install pdo_mysql \
         > /etc/apache2/conf-enabled/security-headers.conf
 
 COPY . /var/www/html
+
+# Create any missing tables (schema files use IF NOT EXISTS) before starting Apache, so an existing
+# database volume picks up schema changes; MariaDB only runs its init scripts on a fresh volume.
+CMD ["sh", "-c", "php bin/init-db.php && exec apache2-foreground"]

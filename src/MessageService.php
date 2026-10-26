@@ -24,10 +24,10 @@ final class MessageService
     public function validate(array $input): array
     {
         $errors = [];
-        $name = trim((string) ($input['name'] ?? ''));
-        $email = trim((string) ($input['email'] ?? ''));
-        $subject = trim((string) ($input['subject'] ?? ''));
-        $body = trim((string) ($input['body'] ?? ''));
+        $name = text_input($input, 'name');
+        $email = text_input($input, 'email');
+        $subject = text_input($input, 'subject');
+        $body = text_input($input, 'body');
 
         if ($name === '' || mb_strlen($name) > self::MAX_LENGTHS['name']) {
             $errors['name'] = 'Please enter your name (up to 120 characters).';
@@ -63,13 +63,13 @@ final class MessageService
         return (int) $this->db->lastInsertId();
     }
 
-    /** Newest messages first, for the admin page. */
+    /** Unread messages first, then newest first, so the limit never hides an unread one behind read ones. */
     public function recent(int $limit = 50): array
     {
         $stmt = $this->db->prepare(
             'SELECT id, name, email, subject, body, is_read, created_at
              FROM messages
-             ORDER BY created_at DESC, id DESC
+             ORDER BY is_read, created_at DESC, id DESC
              LIMIT :lim'
         );
         $stmt->bindValue('lim', $limit, PDO::PARAM_INT);

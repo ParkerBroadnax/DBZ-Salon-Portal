@@ -45,6 +45,15 @@ $serviceRepo = new ServiceRepository($db);
 $services = $serviceRepo->all();
 
 /**
+ * Where a form handler redirects after a POST: the current page by file name, never a path taken
+ * from the request, so a URL like //example.com/... can't turn into a redirect to another site.
+ */
+function redirect_target(string $anchor): string
+{
+    return basename($_SERVER['SCRIPT_NAME'] ?? 'index.php') . $anchor;
+}
+
+/**
  * Handle a booking POST, then redirect (Post/Redirect/Get) so a refresh can't double-book.
  */
 function handle_booking(PDO $db, ServiceRepository $serviceRepo): void
@@ -53,7 +62,7 @@ function handle_booking(PDO $db, ServiceRepository $serviceRepo): void
         return;
     }
 
-    $target = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') . '#book';
+    $target = redirect_target('#book');
 
     if (!Csrf::valid($_POST['csrf'] ?? null)) {
         $_SESSION['flash'] = ['type' => 'danger', 'text' => 'Your session expired. Please try again.'];
@@ -66,7 +75,7 @@ function handle_booking(PDO $db, ServiceRepository $serviceRepo): void
 
     if ($result['errors']) {
         $_SESSION['flash'] = ['type' => 'danger', 'text' => implode(' ', $result['errors'])];
-        $_SESSION['old'] = array_intersect_key($_POST, array_flip(['name', 'email', 'phone', 'adate', 'atime', 'service_id']));
+        $_SESSION['old'] = old_input($_POST, ['name', 'email', 'phone', 'adate', 'atime', 'service_id']);
     } else {
         try {
             $number = $booking->create($result['data']);
@@ -93,7 +102,7 @@ function handle_contact(PDO $db): void
         return;
     }
 
-    $target = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') . '#contact';
+    $target = redirect_target('#contact');
 
     if (!Csrf::valid($_POST['csrf'] ?? null)) {
         $_SESSION['flash'] = ['type' => 'danger', 'text' => 'Your session expired. Please try again.'];
@@ -106,7 +115,7 @@ function handle_contact(PDO $db): void
 
     if ($result['errors']) {
         $_SESSION['flash'] = ['type' => 'danger', 'text' => implode(' ', $result['errors'])];
-        $_SESSION['old'] = array_intersect_key($_POST, array_flip(['name', 'email', 'subject', 'body']));
+        $_SESSION['old'] = old_input($_POST, ['name', 'email', 'subject', 'body']);
     } else {
         try {
             $messages->create($result['data']);
