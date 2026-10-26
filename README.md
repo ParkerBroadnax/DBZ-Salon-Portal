@@ -16,6 +16,7 @@ This project began from a tutorial-style salon template that I customized while 
 | Random appointment numbers that could collide | `random_int` + unique key + retry |
 | No schema (`beauty.sql` was empty) | `db/schema.sql` with keys, constraints, indexes |
 | Admin link pointed to a missing folder | Password-protected admin page |
+| Contact form fields had no names and went nowhere | Messages validated, stored and listed in admin |
 | No tests | PHPUnit suite + GitHub Actions CI |
 
 ## Run it
@@ -79,4 +80,3 @@ tests/        PHPUnit
 ## Known gaps
 
 - The hero and gallery images referenced by the theme (`images/bg_1.png` and others) were never committed, so those sections show without backgrounds.
-- The contact form has no backend yet: its fields have no names and submissions go nowhere. Good next feature: store messages in a `messages` table and list them in admin.

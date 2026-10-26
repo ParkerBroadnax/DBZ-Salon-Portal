@@ -28,13 +28,13 @@ The admin page (`public/admin/`) is disabled until `ADMIN_PASSWORD_HASH` is set 
 
 Plain PHP pages, no framework or router. Each page in `public/` does `require __DIR__ . '/../src/bootstrap.php'` and then includes partials from `templates/`.
 
-- **`src/bootstrap.php`** is the shared request setup: autoload (falls back to a manual `Salon\` autoloader if `vendor/` is missing), loads `.env`, configures error display from `APP_DEBUG`, starts the session, and creates the globals `$db`, `$serviceRepo` and `$services` that pages and templates rely on. It also defines `handle_booking()` and `take_flash()`, used by the pages that carry the booking form (`index.php`, `services.php`). Booking uses Post/Redirect/Get with flash messages and previous input in `$_SESSION`.
-- **`src/`** (`Salon\` namespace): `BookingService` (validate + insert, retrying on appointment-number collisions via SQLSTATE 23000), `ServiceRepository`, `ReportRepository` (admin dashboard and export queries), `Database`, `Env`, `Csrf`. `src/helpers.php` defines the global `e()` HTML-escape function, which is autoloaded via composer `files`.
+- **`src/bootstrap.php`** is the shared request setup: autoload (falls back to a manual `Salon\` autoloader if `vendor/` is missing), loads `.env`, configures error display from `APP_DEBUG`, starts the session, and creates the globals `$db`, `$serviceRepo` and `$services` that pages and templates rely on. It also defines the form handlers `handle_booking()` (used by `index.php` and `services.php`), `handle_contact()` (used by `contact.php`) and `take_flash()`. Both forms use Post/Redirect/Get with flash messages and previous input in `$_SESSION`.
+- **`src/`** (`Salon\` namespace): `BookingService` (validate + insert, retrying on appointment-number collisions via SQLSTATE 23000), `MessageService` (contact form messages: validate, insert, list, mark read), `ServiceRepository`, `ReportRepository` (admin dashboard and export queries), `Database`, `Env`, `Csrf`. `src/helpers.php` defines the global `e()` HTML-escape function, which is autoloaded via composer `files`.
 - **`bin/`** CLI scripts also go through `bootstrap.php` (except `init-db.php`, which loads only `Env` and `Database`).
 
 ### Conventions that span files
 
-- **Two databases, two schemas.** MySQL/MariaDB uses `db/schema.sql` (Docker loads it automatically); SQLite uses `db/schema.sqlite.sql` (local runs and tests). `db/seed.sql` is shared. Any schema change must be made in both files. SQL in `src/` must be portable across MySQL and SQLite.
+- **Two databases, two schemas.** MySQL/MariaDB uses `db/schema.sql` (MariaDB loads it on a fresh volume; the app container also runs `bin/init-db.php` on every start, so new `CREATE TABLE IF NOT EXISTS` tables reach existing volumes); SQLite uses `db/schema.sqlite.sql` (local runs and tests). `db/seed.sql` is shared. Any schema change must be made in both files. SQL in `src/` must be portable across MySQL and SQLite.
 - **Appointment statuses** (`pending`, `confirmed`, `completed`, `cancelled`) are defined in the CHECK constraint of both schemas and again in `ReportRepository::setStatus()`. Keep all three in sync.
 - **Config** is read only through `Env::get()`. Real environment variables override `.env`. Relative SQLite paths in `DB_DSN` are resolved against the project root (`Database::resolveSqlitePath`), not the web server's working directory.
 - **Security baseline** (the reason for the `modernize` rewrite, see README): every query uses PDO prepared statements (emulated prepares off), every value printed in HTML goes through `e()`, and every POST form includes `Csrf::field()` and is checked with `Csrf::valid()`.
@@ -44,4 +44,3 @@ Plain PHP pages, no framework or router. Each page in `public/` does `require __
 ## Known gaps (from README)
 
 - Theme images such as `images/bg_1.png` were never committed.
-- The contact form has no backend (fields are unnamed, nothing is submitted).

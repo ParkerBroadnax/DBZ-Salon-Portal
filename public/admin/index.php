@@ -6,10 +6,12 @@ require __DIR__ . '/../../src/bootstrap.php';
 
 use Salon\Csrf;
 use Salon\Env;
+use Salon\MessageService;
 use Salon\ReportRepository;
 
 $hash = Env::get('ADMIN_PASSWORD_HASH');
 $reports = new ReportRepository($db);
+$messages = new MessageService($db);
 $error = null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
@@ -31,6 +33,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } elseif (!empty($_SESSION['admin']) && isset($_POST['id'], $_POST['status'])) {
         $reports->setStatus((int) $_POST['id'], (string) $_POST['status']);
         header('Location: ./', true, 303);
+        exit;
+    } elseif (!empty($_SESSION['admin']) && isset($_POST['message_id'])) {
+        $messages->markRead((int) $_POST['message_id']);
+        header('Location: ./#messages', true, 303);
         exit;
     }
 }
@@ -88,6 +94,31 @@ $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 							</select>
 							<button class="btn btn-sm btn-outline-primary">Save</button>
 						</form>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		</div>
+
+		<h2 class="h5" id="messages">Messages</h2>
+		<div class="table-responsive mb-5">
+		<table class="table table-sm bg-white">
+			<thead><tr><th>Received</th><th>From</th><th>Subject</th><th>Message</th><th></th></tr></thead>
+			<tbody>
+			<?php foreach ($messages->recent() as $m): ?>
+				<tr class="<?= (int) $m['is_read'] === 1 ? 'text-muted' : 'font-weight-bold' ?>">
+					<td><?= e($m['created_at']) ?></td>
+					<td><?= e($m['name']) ?><br><a href="mailto:<?= e($m['email']) ?>"><?= e($m['email']) ?></a></td>
+					<td><?= e($m['subject']) ?></td>
+					<td class="font-weight-normal" style="white-space: pre-line"><?= e($m['body']) ?></td>
+					<td>
+						<?php if ((int) $m['is_read'] === 0): ?>
+							<form method="post">
+								<?= Csrf::field() ?>
+								<button name="message_id" value="<?= e($m['id']) ?>" class="btn btn-sm btn-outline-primary">Mark read</button>
+							</form>
+						<?php endif; ?>
 					</td>
 				</tr>
 			<?php endforeach; ?>

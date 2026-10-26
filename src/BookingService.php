@@ -34,9 +34,9 @@ final class BookingService
     public function validate(array $input): array
     {
         $errors = [];
-        $name = trim((string) ($input['name'] ?? ''));
-        $email = trim((string) ($input['email'] ?? ''));
-        $phone = trim((string) ($input['phone'] ?? ''));
+        $name = text_input($input, 'name');
+        $email = text_input($input, 'email');
+        $phone = text_input($input, 'phone');
         $serviceId = filter_var($input['service_id'] ?? null, FILTER_VALIDATE_INT);
 
         if ($name === '' || mb_strlen($name) > 120) {
@@ -52,7 +52,7 @@ final class BookingService
             $errors['service_id'] = 'Please choose a service.';
         }
 
-        $date = self::parse((string) ($input['adate'] ?? ''), self::DATE_FORMATS);
+        $date = self::parse(text_input($input, 'adate'), self::DATE_FORMATS);
         $today = ($this->today ?? new DateTimeImmutable('today'))->setTime(0, 0);
         if ($date === null) {
             $errors['adate'] = 'Please choose a date.';
@@ -60,7 +60,7 @@ final class BookingService
             $errors['adate'] = 'Appointments cannot be booked in the past.';
         }
 
-        $time = self::parse(strtolower((string) ($input['atime'] ?? '')), self::TIME_FORMATS);
+        $time = self::parse(strtolower(text_input($input, 'atime')), self::TIME_FORMATS);
         if ($time === null) {
             $errors['atime'] = 'Please choose a time.';
         }

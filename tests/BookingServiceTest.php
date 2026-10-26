@@ -66,6 +66,14 @@ final class BookingServiceTest extends TestCase
         $this->assertArrayHasKey('adate', $result['errors']);
     }
 
+    public function testArrayInputIsRejected(): void
+    {
+        $result = $this->booking->validate($this->input(['name' => ['x'], 'adate' => ['10/30/2026']]));
+
+        $this->assertArrayHasKey('name', $result['errors']);
+        $this->assertArrayHasKey('adate', $result['errors']);
+    }
+
     public function testSqlInjectionIsStoredAsPlainText(): void
     {
         $name = "Robert'); DROP TABLE appointments;--";

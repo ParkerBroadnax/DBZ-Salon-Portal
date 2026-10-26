@@ -1,3 +1,8 @@
+<?php
+require __DIR__ . '/../src/bootstrap.php';
+handle_contact($db);
+[$flash, $old] = take_flash();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,21 +79,23 @@
     <div class="row d-flex align-items-stretch no-gutters">
      <div class="col-md-6 p-5 order-md-last">
       <h2 class="h4 mb-5 font-weight-bold">Contact Us</h2>
-      <form action="#" method="post">
+      <form action="" method="post" id="contact">
+        <?php include __DIR__ . '/../templates/flash.php' ?>
+        <?= \Salon\Csrf::field() ?>
         <div class="form-group">
-          <input type="text" class="form-control" placeholder="Your Name" required>
+          <input type="text" name="name" class="form-control" placeholder="Your Name" maxlength="120" value="<?= e($old['name'] ?? '') ?>" required>
         </div>
         <div class="form-group">
-          <input type="text" class="form-control" placeholder="Your Email"required>
+          <input type="email" name="email" class="form-control" placeholder="Your Email" maxlength="190" value="<?= e($old['email'] ?? '') ?>" required>
         </div>
         <div class="form-group">
-          <input type="text" class="form-control" placeholder="Subject"required>
+          <input type="text" name="subject" class="form-control" placeholder="Subject" maxlength="150" value="<?= e($old['subject'] ?? '') ?>" required>
         </div>
         <div class="form-group">
-          <textarea name="" id="" cols="30" rows="7" class="form-control" placeholder="Message"required></textarea>
+          <textarea name="body" cols="30" rows="7" class="form-control" placeholder="Message" maxlength="5000" required><?= e($old['body'] ?? '') ?></textarea>
         </div>
         <div class="form-group">
-          <input type="submit" value="Send Message" class="btn btn-primary py-3 px-5">
+          <input type="submit" name="contact" value="Send Message" class="btn btn-primary py-3 px-5">
         </div>
       </form>
     </div>
