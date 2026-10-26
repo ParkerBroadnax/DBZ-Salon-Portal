@@ -6,6 +6,7 @@ use Salon\BookingService;
 use Salon\Csrf;
 use Salon\Database;
 use Salon\Env;
+use Salon\MessageService;
 use Salon\ServiceRepository;
 
 $root = dirname(__DIR__);
@@ -83,7 +84,44 @@ function handle_booking(PDO $db, ServiceRepository $serviceRepo): void
     exit;
 }
 
-/** Read and clear one-time messages and previous input for the booking form. */
+/**
+ * Handle a contact form POST, then redirect (Post/Redirect/Get) so a refresh can't resend it.
+ */
+function handle_contact(PDO $db): void
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST' || !isset($_POST['contact'])) {
+        return;
+    }
+
+    $target = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') . '#contact';
+
+    if (!Csrf::valid($_POST['csrf'] ?? null)) {
+        $_SESSION['flash'] = ['type' => 'danger', 'text' => 'Your session expired. Please try again.'];
+        header('Location: ' . $target, true, 303);
+        exit;
+    }
+
+    $messages = new MessageService($db);
+    $result = $messages->validate($_POST);
+
+    if ($result['errors']) {
+        $_SESSION['flash'] = ['type' => 'danger', 'text' => implode(' ', $result['errors'])];
+        $_SESSION['old'] = array_intersect_key($_POST, array_flip(['name', 'email', 'subject', 'body']));
+    } else {
+        try {
+            $messages->create($result['data']);
+            $_SESSION['flash'] = ['type' => 'success', 'text' => 'Thank you for your message. We will get back to you soon.'];
+        } catch (Throwable $e) {
+            error_log('Contact message failed: ' . $e->getMessage());
+            $_SESSION['flash'] = ['type' => 'danger', 'text' => 'Something went wrong. Please try again.'];
+        }
+    }
+
+    header('Location: ' . $target, true, 303);
+    exit;
+}
+
+/** Read and clear one-time messages and previous input for the booking and contact forms. */
 function take_flash(): array
 {
     $flash = $_SESSION['flash'] ?? null;
